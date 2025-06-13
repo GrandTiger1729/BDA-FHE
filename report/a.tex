@@ -1,0 +1,58 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+
+\usepackage{titlesec}
+
+\renewcommand \thesubsection {\arabic{subsection}}
+\titleformat{\subsection}{\normalfont}{\arabic{subsection}.}{1em}{}
+\titlespacing{\subsection}{1em}{\baselineskip}{\baselineskip}
+\titleformat{\subsubsection}{\normalfont}{(\alph{subsubsection})}{1em}{}
+\titlespacing{\subsubsection}{2em}{\baselineskip}{\baselineskip}
+
+\usepackage{graphicx}
+\usepackage{listings}
+\lstset{
+	basicstyle=\ttfamily,
+}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsmath, amssymb}
+
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Sans CJK TC}
+
+\title{Final Project: FHE-secured CAPTCHA Solver}
+\author{蕭凱鴻 B13902046, 蔡兆豐 B13902110}
+\date{}
+
+\begin{document}
+
+\maketitle
+% \tableofcontents
+
+\subsection{目標}
+
+模擬一個場景，使用者的 CAPTCHA 輸入會加密，伺服器對加密輸入與正確答案進行匹配驗證，不需看到明文。
+挑戰：如何在 FHE 下做字元等值比較。
+
+\subsection{實作架構}
+
+我們全部都使用 python 實作，搭配 zama 官方提供的 concrete API 來達到 FHE 加密。程式分為 4 個檔案：\verb|app2.py|、\verb|client.py|、\verb|server.py|、\verb|service.py|。\\
+
+啟動 \verb|python app2.py| 以後會聯絡 \verb|server.py|。server 會生成隨機的 6 個字元字串並編譯好用來加密比較兩個字串的 circuit，把 circuit 的計算部份和加密後的正確答案交給 \verb|service.py|。然後 app 會在 \verb|127.0.0.1:5000| 啟動 flask 框架的網頁，顯示 captcha 圖片給使用者。\\
+
+使用者輸入完以後，會由 \verb|client.py| 加密完把東西傳給 \verb|service.py| 做運算，和正確答案做逐字比較，要每個字元的 FHE 加密都和答案一樣才算成功。比較完成以後會把結果回傳給 client 和 server，就能進到認證成功或失敗的頁面。
+
+\subsection{一些問題}
+
+關於這樣的架構，由於 zama 並沒有在 python 支援編譯器產生的 public key 傳送，要的話只能用 rust 寫。
+
+\subsection{Github}
+
+\url{https://github.com/GrandTiger1729/BDA-FHE.git}
+
+\end{document}
