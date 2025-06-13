@@ -1,90 +1,37 @@
-from flask import Flask, session, render_template_string, request, jsonify
-import random
-import operator
-from concrete import fhe
+from flask import Flask, render_template, request, send_file
+from captcha.image import ImageCaptcha
+from io import BytesIO
+
+from server import Server
+from service import Service
+from client import Client
 
 app = Flask(__name__)
-app.secret_key = 'aeirwairuefav8324fdsrawe3'
 
-OPS = {
-    '+': operator.add,
-    '-': operator.sub,
-    '*': operator.mul,
-}
+# 初始化 Server、Service、Client
+server = Server()
+service = server.service
+client = Client(service, server.circuit.client)
 
-# 產生簡單算術 CAPTCHA 題目
-def generate_captcha():
-    # 三個隨機整數
-    a = random.randint(1, 10)
-    b = random.randint(1, 10)
-    c = random.randint(1, 10)
+@app.route("/", methods=["GET", "POST"])
+def captcha():
+    if request.method == "POST":
+        user_input = request.form.get("captcha_input", "")
+        is_verified = client.verify(user_input)
+        server.regenerate_captcha()  # 每次訪問都生成新的 captcha
+        return render_template("result.html", is_verified=is_verified)
+    return render_template("index2.html")
 
-    # a + b * c
-    question = f"{a} + {b} * {c}"
-    answer = a + (b * c)
+@app.route("/captcha_image")
+def captcha_image():
+    captcha_text = server.captcha_string
+    image = ImageCaptcha(width=280, height=90)
+    data = image.generate(captcha_text)
 
-    return question, a, b, c
+    # 轉成 BytesIO 並回傳
+    img_io = BytesIO(data.read())
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/png')
 
-def cmp(a, b, c, d):
-    return a + b * c - d
-
-compiler = fhe.Compiler(cmp, {"a": "encrypted", "b": "encrypted", "c": "encrypted", "d": "encrypted"})
-
-inputset = [(x, y, z, x + y*z) for x in range(0, 20) for y in range(0, 20) for z in range(0, 20)]
-
-print(f"Compilation...")
-circuit = compiler.compile(inputset)
-
-print(f"Key generation...")
-circuit.keygen()
-
-@app.route('/')
-def index():
-    question, a, b, c = generate_captcha()
-    session['a'] = a
-    session['b'] = b
-    session['c'] = c
-    html = '''
-    <h1>請解答 CAPTCHA</h1>
-    <p>{{ question }} = ?</p>
-    <input id="answer" type="text">
-    <button onclick="submitAnswer()">送出</button>
-    <p id="result"></p>
-    <script>
-      async function submitAnswer() {
-        let answer = document.getElementById('answer').value;
-        let res = await fetch('/verify', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({answer})
-        });
-        let data = await res.json();
-        document.getElementById('result').innerText = data.message;
-      }
-    </script>
-    '''
-    return render_template_string(html, question=question)
-
-@app.route('/verify', methods=['POST'])
-def verify():
-    data = request.get_json()
-    user_answer = int(data.get('answer'))
-    #correct_answer = session.get('captcha_answer')
-    a = session.get('a')
-    b = session.get('b')
-    c = session.get('c')
-    print(f"Homomorphic evaluation...")
-    encrypted_a, encrypted_b, encrypted_c, encrypted_d = circuit.encrypt(a, b, c, user_answer)
-    encrypted_result = circuit.run(encrypted_a, encrypted_b, encrypted_c, encrypted_d)
-    result = circuit.decrypt(encrypted_result)
-    try:
-        if result == 0:
-            return jsonify({'message': '驗證成功'})
-        else:
-            return jsonify({'message': '驗證失敗'})
-    except:
-        return jsonify({'message': '輸入無效'})
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
-

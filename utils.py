@@ -5,7 +5,7 @@ def generate_random_string(length: int) -> str:
     """
     Generates a random string of the specified length using uppercase letters, lowercase letters, and digits.
     """
-    characters = string.ascii_letters + string.digits
+    characters = string.ascii_lowercase + string.digits
     return ''.join(np.random.choice(list(characters), size=length))
 
 def encode_string_to_array(s: str, length: int) -> np.ndarray:
