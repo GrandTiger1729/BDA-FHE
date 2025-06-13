@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+  <title>驗證結果</title>
+</head>
+<body>
+  {% if is_verified %}
+    <h2 style="color:green;">Captcha 驗證成功！</h2>
+  {% else %}
+    <h2 style="color:red;">Captcha 驗證失敗。</h2>
+  {% endif %}
+  <a href="{{ url_for('captcha') }}">再試一次</a>
+</body>
+</html>
+
