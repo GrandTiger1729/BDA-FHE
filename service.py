@@ -16,6 +16,8 @@ class Service:
         
         # To simplify the example, we assume the service only needs to handle one user at a time.
         self.encrypted_and_encoded_captcha = encrypted_and_encoded_captcha
+        # Cached result of the captcha verification for server-side operations.
+        self.cached_result: fhe.Value | None = None
 
     @property
     def captcha_length(self) -> int:
@@ -53,5 +55,6 @@ class Service:
         deserialized_encrypted_and_encoded_user_input = fhe.Value.deserialize(serialized_encrypted_and_encoded_user_input)
 
         result: fhe.Value = self._captcha_match(deserialized_encrypted_and_encoded_user_input, deserialized_evaluation_keys)
+        self.cached_result = result
         serialized_result: bytes = result.serialize()
         return serialized_result

@@ -19,8 +19,11 @@ def captcha():
         user_input = request.form.get("captcha_input", "")
         is_verified = client.verify(user_input)
         server.regenerate_captcha()  # 每次訪問都生成新的 captcha
-        return render_template("result.html", is_verified=is_verified)
-    return render_template("index2.html")
+        if is_verified:
+            return render_template("success.html")
+        else:
+            return render_template("fail.html")
+    return render_template("index.html")
 
 @app.route("/captcha_image")
 def captcha_image():
@@ -32,6 +35,11 @@ def captcha_image():
     img_io = BytesIO(data.read())
     img_io.seek(0)
     return send_file(img_io, mimetype='image/png')
+
+@app.route("/new_page")
+def new_page_route():
+    # You can add any logic here if needed before rendering
+    return render_template("new_page.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

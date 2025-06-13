@@ -64,3 +64,11 @@ class Server:
         _, encrypted_and_encoded_captcha = self.circuit.encrypt(encoded_captcha, encoded_captcha)
         self.service.encrypted_and_encoded_captcha = encrypted_and_encoded_captcha
         return self.captcha_string
+    
+    def is_verified(self) -> bool:
+        """
+        Checks if the user is verified based on the current captcha.
+        """
+        if self.service.cached_result is None:
+            return False
+        return bool(self.service.cached_result)
