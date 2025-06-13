@@ -11,3 +11,8 @@ wheels/
 # Virtual environments
 .venv
 .artifacts
+
+# Latex
+*.aux
+*.log
+*.out
